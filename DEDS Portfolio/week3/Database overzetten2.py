@@ -2,12 +2,14 @@
 import sqlite3
 import pyodbc
 import pandas as pd
+import warnings
 from pandas import DataFrame
 
+
 #%%
-server = r'Xanderslaptop\SQLEXPRESS'
+server = r'Xanders-pc\SQLEXPRESS'
 database = 'TEST'
-database2 = 'SalesDB7'
+database2 = 'SalesDB21'
 databaseje = pyodbc.connect(f"DRIVER={{SQL Server}};SERVER={server};DATABASE={database}")
 
 def get_sql_server_connection():
@@ -58,7 +60,7 @@ merged_products = pd.merge(merged_products, product_line_data, on='PRODUCT_LINE_
 
 
 merged_products = merged_products.rename(columns={'PRODUCT_NUMBER': 'Product_id', 'INTRODUCTION_DATE': 'Introduction_date', 'PRODUCTION_COST': 'Production_cost', 'MARGIN': 'Margin', 'PRODUCT_IMAGE': 'Product_image', 'LANGUAGE': 'Language', 'PRODUCT_NAME': 'Product_name', 'DESCRIPTION': 'Description', 'PRODUCT_TYPE_EN': 'Product_type_en', 'PRODUCT_LINE_EN': 'Product_line_en'})
-merged_products = merged_products.drop(columns=['Product_id', 'PRODUCT_TYPE_CODE', 'PRODUCT_LINE_CODE'])
+merged_products = merged_products.drop(columns=[ 'PRODUCT_TYPE_CODE', 'PRODUCT_LINE_CODE'])
 
 Course_query = "SELECT * FROM course"
 Course_data = pd.read_sql_query(Course_query, databaseje)
@@ -83,18 +85,18 @@ Returned_reason_data = pd.read_sql_query(Returned_reason_query, databaseje)
 
 Returned_query = "SELECT * FROM returned_item"
 Returned_data = pd.read_sql_query(Returned_query, databaseje)
-Returned_data = Returned_data.rename(columns={'ORDER_DETAIL_CODE': 'Order_detail_code'})
+Returned_data = Returned_data.rename(columns={'ORDER_DETAIL_CODE': 'Order_number', 'RETURN_CODE':'Return_id'})
 Returned_data = pd.merge(Returned_data, Returned_reason_data, on='RETURN_REASON_CODE', how='left')
-Returned_data = Returned_data.drop(columns=['RETURN_REASON_CODE', 'RETURN_CODE'])
+Returned_data = Returned_data.drop(columns=['RETURN_REASON_CODE'])
 
 Sales_demographics_query = "SELECT * FROM sales_demographic"
 Sales_demographics_data = pd.read_sql_query(Sales_demographics_query, databaseje)
 
 Age_group_query = "SELECT * FROM age_group"
 Age_group_data = pd.read_sql_query(Age_group_query, databaseje)
-Sales_demographics_data = Sales_demographics_data.rename(columns={'RETAILER_CODEMR': 'Headquarters_id'})
+Sales_demographics_data = Sales_demographics_data.rename(columns={'RETAILER_CODEMR': 'Headquarters_id', 'DEMOGRAPHIC_CODE': 'Demographic_id'})
 Sales_demographics_data = pd.merge(Sales_demographics_data, Age_group_data, on='AGE_GROUP_CODE')
-Sales_demographics_data = Sales_demographics_data.drop(columns=['AGE_GROUP_CODE', 'DEMOGRAPHIC_CODE'])
+Sales_demographics_data = Sales_demographics_data.drop(columns=['AGE_GROUP_CODE'])
 
 
 Product_forecast_query = "SELECT * FROM product_forecast"
@@ -128,22 +130,106 @@ Headquarters_data = pd.read_sql_query(Headquarters_query, databaseje)
 test = Headquarters_data
 Headquarters_data = pd.merge(Headquarters_data, Country_data, on='COUNTRY_CODE', how='left')
 Headquarters_data = pd.merge(Headquarters_data, Sales_territory_data, on='SALES_TERRITORY_CODE', how='left')
-Headquarters_data = Headquarters_data.rename(columns={'LANGUAGE': 'Country_language', 'TERRITORY_NAME_EN': 'Territory_en'})
+Headquarters_data = Headquarters_data.rename(columns={'RETAILER_CODEMR': 'Headquarters_id', 'LANGUAGE': 'Country_language', 'TERRITORY_NAME_EN': 'Territory_en'})
 Headquarters_data = pd.merge(Headquarters_data, Segment_data, on='SEGMENT_CODE', how='left')
-Headquarters_data = Headquarters_data.drop(columns=['RETAILER_CODEMR', 'COUNTRY_CODE', 'SALES_TERRITORY_CODE', 'SEGMENT_CODE', 'COUNTRY_LANGUAGE', 'CURRENCY_NAME'])
+Headquarters_data = Headquarters_data.drop(columns=['COUNTRY_CODE', 'SALES_TERRITORY_CODE', 'SEGMENT_CODE', 'Country_language', 'CURRENCY_NAME'])
 
 RetailerType_query = "SELECT * FROM retailer_type"
 RetailerType_data = pd.read_sql_query(RetailerType_query, databaseje)
 
+RetailerSite_query = "SELECT * FROM retailer_site"
+RetailerSite_data = pd.read_sql_query(RetailerSite_query, databaseje)
+
+RetailerContact_query = "SELECT * FROM retailer_contact"
+RetailerContact_data = pd.read_sql_query(RetailerContact_query, databaseje)
+
 Retailer_query = "SELECT * FROM retailer"
 Retailer_data = pd.read_sql_query(Retailer_query, databaseje)
 Retailer_data = pd.merge(Retailer_data, RetailerType_data, on='RETAILER_TYPE_CODE', how='left')
-Retailer_data = Retailer_data.rename(columns={'RETAILER_CODEMR': 'Headquarters_id'})
-Retailer_data = Retailer_data.drop(columns=['Country_language', 'CURRENCY_NAME'])
+Retailer_data = pd.merge(RetailerSite_data, Retailer_data, on='RETAILER_CODE', how='left')
+Retailer_data = pd.merge(Retailer_data, RetailerContact_data, on='RETAILER_SITE_CODE', how='left')
+Retailer_data = pd.merge(Retailer_data, Country_data, on='COUNTRY_CODE', how='left')
+Retailer_data = pd.merge(Retailer_data, Sales_territory_data, on='SALES_TERRITORY_CODE', how='left')
+Retailer_data = Retailer_data.rename(columns={'RETAILER_CODEMR': 'Headquarters_id', 'RETAILER_SITE_CODE': 'Retailer_id', 'E_MAIL': 'Email'})
+Retailer_data = Retailer_data.drop(columns=['RETAILER_TYPE_CODE', 'SALES_TERRITORY_CODE', 'RETAILER_CONTACT_CODE', 'COUNTRY_CODE', 'RETAILER_CODE'])
 
+Branch_query = "SELECT * FROM Sales_branch"
+Branch_data = pd.read_sql_query(Branch_query, databaseje)
+
+Staff_query = "SELECT * FROM Sales_staff"
+Staff_data = pd.read_sql_query(Staff_query, databaseje)
+Staff_data = pd.merge(Staff_data, Branch_data, on='SALES_BRANCH_CODE', how='left')
+Staff_data = pd.merge(Staff_data, Country_data, on='COUNTRY_CODE', how='left')
+Staff_data = pd.merge(Staff_data, Sales_territory_data, on='SALES_TERRITORY_CODE', how='left')
+Staff_data = Staff_data.rename(columns={'SALES_STAFF_CODE': 'Sales_staff_id', 'MANAGER_CODE': 'Manager_id'})
+Staff_data = Staff_data.drop(columns=['SALES_TERRITORY_CODE', 'COUNTRY_CODE', 'SALES_BRANCH_CODE'])
+
+
+OrderDetails_query = "SELECT * FROM Order_Details"
+OrderDetails_data = pd.read_sql_query(OrderDetails_query, databaseje)
+OrderDetails_data = OrderDetails_data.rename(columns={'ORDER_NUMBER': 'Sales_id', 'ORDER_DETAIL_CODE': 'Order_number'})
+
+OrderMethod_query = "SELECT * FROM Order_Method"
+OrderMethod_data = pd.read_sql_query(OrderMethod_query, databaseje)
+
+Sales_query = "SELECT * FROM Order_header"
+Sales_data = pd.read_sql_query(Sales_query, databaseje)
+Sales_data = pd.merge(Sales_data, OrderMethod_data, on='ORDER_METHOD_CODE', how='left')
+Sales_data = Sales_data.rename(columns={'ORDER_NUMBER': 'Sales_id', 'SALES_STAFF_CODE': 'Sales_staff_id', 'RETAILER_SITE_CODE': 'Retailer_id'})
+
+
+Sales_data = pd.merge(Sales_data, OrderDetails_data, on='Sales_id', how='left')
+Sales_data['Korting'] = ((Sales_data['UNIT_PRICE'] - Sales_data['UNIT_SALE_PRICE']) != 0).astype(int)
+Sales_data['ORDER_DATE'] = pd.to_datetime(Sales_data['ORDER_DATE'])
+
+def determine_season(month):
+    if month in [3, 4, 5]:
+        return 'Lente'
+    elif month in [6, 7, 8]:
+        return 'Zomer'
+    elif month in [9, 10, 11]:
+        return 'Herfst'
+    else:
+        return 'Winter'
+
+
+Sales_data['Kosten'] = Sales_data['UNIT_COST'] * Sales_data['QUANTITY']
+
+Sales_data['Seizoen'] = Sales_data['ORDER_DATE'].dt.month.apply(determine_season)
+
+Sales_data['Totaal_prijs'] = Sales_data['UNIT_SALE_PRICE'] * Sales_data['QUANTITY']
+
+Sales_data['Kortingprijs'] = (Sales_data['UNIT_PRICE'] - Sales_data['UNIT_SALE_PRICE']) * Sales_data['QUANTITY']
+
+Sales_data['Totale_Prijs'] = Sales_data.groupby('Sales_id')['Totaal_prijs'].transform('sum')
+Sales_data['Totale_Kosten'] = Sales_data.groupby('Sales_id')['Kosten'].transform('sum')
+Sales_data['Totale_korting'] = Sales_data.groupby('Sales_id')['Kortingprijs'].transform('sum')
+
+Sales_data['Korting'] = (Sales_data['Totale_korting'] != 0)
+
+Sales_data['Bestellingslaag'] = Sales_data['Totale_Prijs'].apply(lambda x: 'Duur' if x > 30000 else 'Goedkoop')
+
+Sales_data['Omzet'] = (Sales_data['Totale_Prijs'] - Sales_data['Totale_Kosten'])
+
+Sales_data = Sales_data.drop(columns=['RETAILER_NAME', 'Kortingprijs', 'Totaal_prijs', 'RETAILER_CONTACT_CODE', 'SALES_BRANCH_CODE', 'ORDER_METHOD_CODE', 'Order_number', 'PRODUCT_NUMBER', 'QUANTITY', 'UNIT_COST', 'UNIT_PRICE', 'UNIT_SALE_PRICE'])
+
+grouped_sales_data = Sales_data.groupby('Sales_id').agg({
+    'Retailer_id': 'first',  # Je kunt kiezen om de eerste waarde per Sales_id te nemen
+    'Sales_staff_id': 'first',
+    'ORDER_DATE': 'first',  # Kies een representatieve datum per Sales_id
+    'ORDER_METHOD_EN': 'first',  # Je kunt kiezen om de eerste waarde per Sales_id te nemen
+    'Korting': 'max',  # Kies de max waarde voor Korting (of pas aan zoals nodig)
+    'Seizoen': 'first',  # Kies de eerste waarde van Seizoen per Sales_id
+    'Totale_Prijs': 'sum',  # Bereken de som van Totale_Prijs per Sales_id
+    'Totale_korting': 'sum',  # Bereken de som van Totale_korting per Sales_id
+    'Bestellingslaag': 'first',  # Kies de eerste waarde van Bestellingslaag per Sales_id
+    'Omzet': 'first'
+}).reset_index()
+
+pd.set_option('display.float_format', lambda x: '%.3f' % x)
 #%%
-print(Retailer_data.to_string())
-
+printje = grouped_sales_data.head(1000)
+print(printje.to_string())
 
 
 #%%
@@ -178,24 +264,7 @@ def insert_data_to_sql_server(df, table_name):
 
 
 #%%
-
-# Verwijder duplicaten door de DataFrame uniek te maken op basis van 'product_id'
-# merged_products = merged_products.drop_duplicates()
-
-
-
-
-# Als de merge leidt tot een verhoging van het aantal rijen, kunnen er duplicaten zijn
-
-
-# insert_data_to_sql_server(merged_products, 'Product')
-
-
 insert_data_to_sql_server(Training_data, 'Training')
-
-# insert_data_to_sql_server(product_line_data, 'Product_Line')
-# insert_data_to_sql_server(retailer_segment_data, 'Retailer_Segment')
-# insert_data_to_sql_server(retailer_type_data, 'Retailer_Type')
 insert_data_to_sql_server(Satisfaction_data, 'Satisfaction')
 insert_data_to_sql_server(Returned_data, 'Returned_item')
 insert_data_to_sql_server(Sales_demographics_data, 'Sales_demographic')
@@ -203,33 +272,11 @@ insert_data_to_sql_server(Product_forecast_data, 'Product_forecast')
 insert_data_to_sql_server(Inventory_levels_data, 'Inventory_levels')
 insert_data_to_sql_server(merged_products, 'Product')
 insert_data_to_sql_server(Headquarters_data, 'Retailer_headquarters')
-# insert_data_to_sql_server(course_data, 'Course')
-# insert_data_to_sql_server(age_group_data, 'Age_Group')
-# insert_data_to_sql_server(return_reason_data, 'Return_Reason')
+insert_data_to_sql_server(Retailer_data, 'Retailer')
+insert_data_to_sql_server(Staff_data, 'Sales_staff')
+insert_data_to_sql_server(OrderDetails_data, 'Order_details')
+insert_data_to_sql_server(grouped_sales_data, 'Sales')
 
-
-#%%
-
-# insert_data_to_sql_server(merged_data, 'Country')
-# insert_data_to_sql_server(sales_branch_data, 'Sales_Branch')
-# insert_data_to_sql_server(product_type_data, 'Product_Type')
-# insert_data_to_sql_server(retailer_headquarters_data, 'Retailer_Headquarters')
-# insert_data_to_sql_server(sales_staff_data, 'Sales_Staff')
-# #%%
-# insert_data_to_sql_server(retailer_data, 'Retailer')
-# insert_data_to_sql_server(retailer_site_data, 'Retailer_Site')
-# insert_data_to_sql_server(product_data, 'Product')
-# insert_data_to_sql_server(satisfaction_data, 'Satisfaction')
-# insert_data_to_sql_server(training_data, 'Training')
-#
-# #%%
-# insert_data_to_sql_server(order_header_data, 'Order_Header')
-# insert_data_to_sql_server(order_details_data, 'Order_Details')
-# insert_data_to_sql_server(inventory_levels_data, 'Inventory_Levels')
-# insert_data_to_sql_server(product_forecast_data, 'Product_Forecast')
-# insert_data_to_sql_server(retailer_contact_data, 'Retailer_Contact')
-# insert_data_to_sql_server(sales_demographic_data, 'Sales_Demographic')
-# insert_data_to_sql_server(returned_item_data, 'Returned_Item')
 
 #%%
 databaseje.close()

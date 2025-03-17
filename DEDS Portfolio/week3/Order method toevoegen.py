@@ -2,7 +2,7 @@ import sqlite3
 import pandas as pd
 import pyodbc
 
-DB = {'servername' : r'Xanderslaptop\SQLEXPRESS',
+DB = {'servername' : r'Xanders-pc\SQLEXPRESS',
         'database' : 'TEST'}
 
 
@@ -14,7 +14,7 @@ export_conn = pyodbc.connect('DRIVER={SQL Server};SERVER=' +
 )
 export_cursor = export_conn.cursor()
 
-go_sales_conn = sqlite3.connect('C:\\Users\\xande\\PycharmProjects\\DEDS\\DEDS Portfolio\\week1\\Data\\go_sales_train.sqlite')
+go_sales_conn = sqlite3.connect('..\\week1\\Data\\go_sales_train.sqlite')
 
 # Data ophalen uit SQLite
 df = pd.read_sql("SELECT * FROM ORDER_METHOD", go_sales_conn)
