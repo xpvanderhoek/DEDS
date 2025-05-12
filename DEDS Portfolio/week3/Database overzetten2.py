@@ -7,9 +7,9 @@ from pandas import DataFrame
 
 
 #%%
-server = r'Xanders-pc\SQLEXPRESS'
+server = r'Xanderslaptop\SQLEXPRESS'
 database = 'TEST'
-database2 = 'SalesDB21'
+database2 = 'werkend'
 databaseje = pyodbc.connect(f"DRIVER={{SQL Server}};SERVER={server};DATABASE={database}")
 
 def get_sql_server_connection():
